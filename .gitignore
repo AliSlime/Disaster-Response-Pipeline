@@ -719,3 +719,4 @@ ASALocalRun/
 hs_err_pid*
 
 InsertDatabaseName.db
+/web/data/DisasterResponse.db
