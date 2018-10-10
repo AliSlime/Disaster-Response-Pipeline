@@ -1,6 +1,9 @@
 import json
+import re
+
 import plotly
 import pandas as pd
+from nltk.corpus import stopwords
 
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
@@ -11,6 +14,7 @@ from plotly.graph_objs import Bar
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
 
+from sklearn.feature_extraction.text import CountVectorizer
 
 app = Flask(__name__)
 
@@ -24,6 +28,26 @@ def tokenize(text):
         clean_tokens.append(clean_tok)
 
     return clean_tokens
+
+def my_tokenize(text):
+    """
+    process text, get tokenize
+    :param text: text
+    :return: tokens
+    """
+    stop_words = stopwords.words('english')
+    lemmatizer = WordNetLemmatizer()
+
+    # remove punctation
+    text = re.sub(r"[^a-zA-Z0-9]", ' ', text.lower())
+
+    # tokenize text
+    tokens = word_tokenize(text)
+
+    # lemmatize and remove stop words
+    tokens = [lemmatizer.lemmatize(word) for word in tokens if word not in stop_words]
+
+    return (tokens)
 
 # load data
 engine = create_engine('sqlite:///../data/DisasterResponse.db')
@@ -40,32 +64,82 @@ def index():
     
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
-    genre_counts = df.groupby('genre').count()['message']
-    genre_names = list(genre_counts.index)
-    
+    # genre_counts = df.groupby('genre').count()['message']
+    # genre_names = list(genre_counts.index)
+
+    ## plot 1nd data
+    f_list = ['related', 'request', 'offer', 'aid_related',
+              'medical_help', 'medical_products', 'search_and_rescue',
+              'security', 'military', 'child_alone', 'water', 'food',
+              'shelter', 'clothing', 'money', 'missing_people', 'refugees',
+              'death', 'other_aid', 'infrastructure_related', 'transport',
+              'buildings', 'electricity', 'tools', 'hospitals', 'shops',
+              'aid_centers', 'other_infrastructure', 'weather_related',
+              'floods', 'storm', 'fire', 'earthquake', 'cold',
+              'other_weather', 'direct_report']
+    sum_list = [df[f].sum() for f in f_list]
+
+    ## plot 1nd data
+    vect = CountVectorizer(tokenizer=my_tokenize)
+    X = vect.fit_transform(df[df['related'] == 1]['message'].values)
+    voc_list = []
+    count_list = []
+    for key in vect.vocabulary_:
+        voc_list.append(key)
+        count_list.append(vect.vocabulary_[key])
+
+    plt_voc = []
+    plt_count = []
+    base = 27900
+    for i in range(0, 50):
+        max_index = count_list.index(max(count_list))
+        plt_count.append(count_list[max_index] - base)
+        plt_voc.append(voc_list[max_index])
+        del count_list[max_index]
+        del voc_list[max_index]
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
         {
             'data': [
                 Bar(
-                    x=genre_names,
-                    y=genre_counts
+                    x=f_list,
+                    y=sum_list
                 )
             ],
 
             'layout': {
-                'title': 'Distribution of Message Genres',
+                'title': 'Distribution of Every Class',
                 'yaxis': {
                     'title': "Count"
                 },
                 'xaxis': {
-                    'title': "Genre"
+                    'title': "Class"
                 }
             }
-        }
+        },
+
+        {
+            'data': [
+                Bar(
+                    x=plt_voc,
+                    y=plt_count
+                )
+            ],
+
+            'layout': {
+                'title': 'Voc Count of Related',
+                'yaxis': {
+                    'title': "Count(Need to add 27900)"
+                },
+                'xaxis': {
+                    'title': "Voc"
+                }
+            }
+        },
     ]
-    
+
     # encode plotly graphs in JSON
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
