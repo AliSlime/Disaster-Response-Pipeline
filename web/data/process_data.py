@@ -1,7 +1,9 @@
 import sys
 import pandas as pd
 import re
+import numpy as np
 from sqlalchemy import create_engine
+
 
 def load_data(messages_filepath, categories_filepath):
     """
@@ -25,13 +27,12 @@ def load_data(messages_filepath, categories_filepath):
 
     # rename the columns of `categories`
     categories.columns = category_colnames
-
     for column in categories:
         # set each value to be the last character of the string
-        categories[column] = categories[column].str.replace('^.*-', '')
-
+        categories[column] = categories[column].str[-1]
+        # print(categories.shape)
         # convert column from string to numeric
-        categories[column] = categories[column].astype(int)
+        categories[column] = categories[column].astype(np.int).apply(lambda x: 1 if x >= 2 else x)
 
     # drop the original categories column from `df`
     df.drop(['categories'], axis=1, inplace=True)
@@ -75,18 +76,18 @@ def main():
 
         print('Cleaning data...')
         df = clean_data(df)
-        
+
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
         save_data(df, database_filepath)
-        
+
         print('Cleaned data saved to database!')
-    
+
     else:
-        print('Please provide the filepaths of the messages and categories '\
-              'datasets as the first and second argument respectively, as '\
-              'well as the filepath of the database to save the cleaned data '\
-              'to as the third argument. \n\nExample: python process_data.py '\
-              'disaster_messages.csv disaster_categories.csv '\
+        print('Please provide the filepaths of the messages and categories ' \
+              'datasets as the first and second argument respectively, as ' \
+              'well as the filepath of the database to save the cleaned data ' \
+              'to as the third argument. \n\nExample: python process_data.py ' \
+              'disaster_messages.csv disaster_categories.csv ' \
               'DisasterResponse.db')
 
 

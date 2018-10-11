@@ -11,18 +11,19 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.porter import PorterStemmer
 from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import CountVectorizer,TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split,GridSearchCV
-from sklearn.ensemble import RandomForestClassifier,AdaBoostClassifier
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
-from sklearn.metrics import classification_report,f1_score,accuracy_score,log_loss
+from sklearn.metrics import classification_report, f1_score, accuracy_score, log_loss
 
 nltk.download('wordnet')
 nltk.download('stopwords')
 nltk.download('punkt')
+
 
 def load_data(database_filepath):
     """
@@ -45,7 +46,7 @@ def load_data(database_filepath):
     X = df['message'].values
     Y = df[Y_labels].values
 
-    return (X,Y,Y_labels)
+    return (X, Y, Y_labels)
 
 
 def tokenize(text):
@@ -103,9 +104,11 @@ def evaluate_model(model, X_test, Y_test, category_names):
     :return: None
     """
     y_pred = model.predict(X_test)
-    print(classification_report(Y_test[:, 1], y_pred[:, 1], target_names=category_names))
-    print('accuracy_score:{}'.format(accuracy_score(Y_test[:, 1], y_pred[:, 1])))
-    print('log_loss:{}'.format(log_loss(Y_test[:, 1], y_pred[:, 1])))
+    print("Computing Accuracy for each Category")
+    for i in range(36):
+        print(category_names[i], " Accuracy: ", accuracy_score(Y_test[:, i], y_pred[:, i]))
+    print("\n Classification Report")
+    print(classification_report(Y_test, y_pred, target_names=category_names))
 
 
 def save_model(model, model_filepath):
@@ -131,7 +134,7 @@ def main():
 
         print('Training model...')
         model.fit(X_train, Y_train)
-        
+
         print('Evaluating model...')
         evaluate_model(model, X_test, Y_test, category_names)
 
@@ -141,9 +144,9 @@ def main():
         print('Trained model saved!')
 
     else:
-        print('Please provide the filepath of the disaster messages database '\
-              'as the first argument and the filepath of the pickle file to '\
-              'save the model to as the second argument. \n\nExample: python '\
+        print('Please provide the filepath of the disaster messages database ' \
+              'as the first argument and the filepath of the pickle file to ' \
+              'save the model to as the second argument. \n\nExample: python ' \
               'train_classifier.py ../data/DisasterResponse.db classifier.pkl')
 
 
